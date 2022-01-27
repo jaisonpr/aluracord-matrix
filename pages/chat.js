@@ -1,23 +1,61 @@
 import appConfig from '../config.json';
 import React from 'react';
 import { Box, Text, TextField, Image, Button } from '@skynexui/components';
+import { createClient } from '@supabase/supabase-js';
 
-export default function chatPage() {
+
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlhdCI6MTY0MDg2OTA3MywiZXhwIjoxOTU2NDQ1MDczfQ.343ibq7UYFPDdyfsfGmEqUma01RW7P7KC9U2MDAGSkI';
+const SUPABASE_URL = 'https://kysxypdmtxjlkdysdlas.supabase.co';
+const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+export default function ChatPage() {
 
     const [message, setMessage] = React.useState('');
     const [messageList, setMessageList] = React.useState([]);
 
+    React.useEffect(() => {
+        supabaseClient
+            .from('mensagens')
+            .select('*')
+            .order('id', { ascending: false })
+            .then(({ data }) => {
+                console.log('Dados da consulta:', data);
+                setMessageList(data);
+            });
+    }, []);
+
     function handleNewMessage(newMessage) {
-        const message = {
-            id: messageList.length + 1,
-            from: 'vanessametonini',
+        // const message = {
+        //     id: messageList.length + 1,
+        //     from: 'vanessametonini',
+        //     texto: newMessage,
+        // };
+
+        // setMessageList([
+        //     message,
+        //     ...messageList,
+        // ]);
+        // setMessage('');
+
+        const mensagem = {
+            de: 'jaisonpr',
             texto: newMessage,
         };
 
-        setMessageList([
-            message,
-            ...messageList,
-        ]);
+        supabaseClient
+            .from('mensagens')
+            .insert([
+                // Tem que ser um objeto com os MESMOS CAMPOS que você escreveu no supabase
+                mensagem
+            ])
+            .then(({ data }) => {
+                console.log('Criando mensagem: ', data);
+                setMessageList([
+                    data[0],
+                    ...messageList,
+                ]);
+            });
+
         setMessage('');
     }
 
@@ -80,7 +118,7 @@ export default function chatPage() {
                                         display: 'inline-block',
                                         marginRight: '8px',
                                     }}
-                                    src={`https://github.com/vanessametonini.png`}
+                                    src={`https://github.com/${message.de}.png`}
                                 />
                                 <Text tag="strong">
                                     {message.de}
@@ -142,7 +180,7 @@ export default function chatPage() {
                     }}
                 >
                     <MessageList messages={messageList} />
-                    
+
                     <Box
                         as="form"
                         styleSheet={{
