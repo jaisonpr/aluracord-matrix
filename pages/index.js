@@ -4,7 +4,6 @@ import { Box, Button, Text, TextField, Image } from '@skynexui/components';
 import { useRouter } from 'next/router';
 
 function Title(props) {
-    console.log(props);
     const Tag = props.tag || 'h1';
     return (
         <>
@@ -57,7 +56,7 @@ export default function HomePage() {
                 event.preventDefault();
                 console.log('submited');
                 //window.location.href = '/chat';
-                router.push('/chat');
+                router.push(`/chat?username=${username}`);
               }}
               styleSheet={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
@@ -65,11 +64,19 @@ export default function HomePage() {
               }}
             >
               <Title tag="h2">Boas vindas de volta!</Title>
+
               <Text variant="body3" styleSheet={{ marginBottom: '32px', color: appConfig.theme.colors.neutrals[300] }}>
                 {appConfig.name}
               </Text>
   
-              {/* <TextField
+              <TextField
+                value={username}
+                onChange={function (event) {
+                  console.log('---> ', event.target.value);
+                  const valor = event.target.value;
+                  // change the value of the variable using React and notify 
+                  setUsername(valor);
+                }}
                 fullWidth
                 textFieldColors={{
                   neutral: {
@@ -79,15 +86,15 @@ export default function HomePage() {
                     backgroundColor: appConfig.theme.colors.neutrals[800],
                   },
                 }}
-              /> */}
+              />
 
-              <input type="text" 
+              {/* <input type="text" 
                 value={username} 
                 onChange={function handler(event) {
                   console.log('---> ', event.target.value);
                   const valor = event.target.value;
                   setUsername(valor);
-                }} />
+                }} /> */}
 
               <Button
                 type='submit'

@@ -1,28 +1,62 @@
 import appConfig from '../config.json';
 import React from 'react';
+import { useRouter } from 'next/router';
 import { Box, Text, TextField, Image, Button } from '@skynexui/components';
 import { createClient } from '@supabase/supabase-js';
+import { ButtonSendSticker } from '../src/components/ButtonSendSticker';
 
 
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlhdCI6MTY0MDg2OTA3MywiZXhwIjoxOTU2NDQ1MDczfQ.343ibq7UYFPDdyfsfGmEqUma01RW7P7KC9U2MDAGSkI';
 const SUPABASE_URL = 'https://kysxypdmtxjlkdysdlas.supabase.co';
 const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+function listeningMessages(addMessage) {
+    return supabaseClient
+        .from('mensagens')
+        .on('INSERT', (live) => {
+            addMessage(live.new);
+        })
+        .subscribe();
+}
+
+
 export default function ChatPage() {
 
     const [message, setMessage] = React.useState('');
     const [messageList, setMessageList] = React.useState([]);
+    const router = useRouter();
+    const loggedUser = router.query.username;
 
     React.useEffect(() => {
         supabaseClient
             .from('mensagens')
             .select('*')
+            .neq('de', 'samyaolinda') //error on db (404 from git)
             .order('id', { ascending: false })
             .then(({ data }) => {
                 console.log('Dados da consulta:', data);
                 setMessageList(data);
             });
+
+        const subscription = listeningMessages((newMessage) => {
+            console.log('newMessage: ', newMessage);
+            console.log('messageList: ', messageList);
+            
+            setMessageList((actualList) => {
+                console.log('valorAtualDaLista:', actualList);
+                return [
+                    newMessage,
+                    ...actualList,
+                ]
+            });
+        });
+           
+        return () => {
+            subscription.unsubscribe();
+        }
+
     }, []);
+    
 
     function handleNewMessage(newMessage) {
         // const message = {
@@ -38,7 +72,7 @@ export default function ChatPage() {
         // setMessage('');
 
         const mensagem = {
-            de: 'jaisonpr',
+            de: loggedUser,
             texto: newMessage,
         };
 
@@ -50,10 +84,6 @@ export default function ChatPage() {
             ])
             .then(({ data }) => {
                 console.log('Criando mensagem: ', data);
-                setMessageList([
-                    data[0],
-                    ...messageList,
-                ]);
             });
 
         setMessage('');
@@ -78,7 +108,7 @@ export default function ChatPage() {
     }
 
     function MessageList(props) {
-        console.log(props);
+        //console.log(props);
         return (
             <Box
                 tag="ul"
@@ -112,11 +142,11 @@ export default function ChatPage() {
                             >
                                 <Image
                                     styleSheet={{
-                                        width: '20px',
-                                        height: '20px',
-                                        borderRadius: '50%',
-                                        display: 'inline-block',
-                                        marginRight: '8px',
+                                    width: '20px',
+                                    height: '20px',
+                                    borderRadius: '50%',
+                                    display: 'inline-block',
+                                    marginRight: '8px',
                                     }}
                                     src={`https://github.com/${message.de}.png`}
                                 />
@@ -134,7 +164,17 @@ export default function ChatPage() {
                                     {(new Date().toLocaleDateString())}
                                 </Text>
                             </Box>
-                            {message.texto}
+                            
+                            {
+                                message.texto.startsWith(':sticker:')
+                                ? (
+                                    <Image src={message.texto.replace(':sticker:', '')} />
+                                )
+                                : (
+                                    message.texto
+                                )
+                            }        
+
                         </Text>
                     );
                 })}
@@ -167,6 +207,7 @@ export default function ChatPage() {
                 }}
             >
                 <Header />
+                
                 <Box
                     styleSheet={{
                         position: 'relative',
@@ -190,7 +231,7 @@ export default function ChatPage() {
                     >
                         <TextField
                             value={message}
-                            onChange={(event) => {
+                            onChange={(event) => {                                
                                 setMessage(event.target.value);
                             }}
                             onKeyPress={(event) => {
@@ -212,6 +253,15 @@ export default function ChatPage() {
                                 color: appConfig.theme.colors.neutrals[200],
                             }}
                         />
+
+                    
+                        {/* CallBack */}
+                        <ButtonSendSticker
+                            onStickerClick={(sticker) => {
+                                handleNewMessage(':sticker: ' + sticker);
+                            }}
+                        />            
+
                     </Box>
                 </Box>
             </Box>
